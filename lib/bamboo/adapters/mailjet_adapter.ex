@@ -110,6 +110,8 @@ defmodule Bamboo.MailjetAdapter do
     ]
   end
 
+  def supports_attachments?, do: true
+
   defp to_mailjet_body(%Email{} = email) do
     %{}
     |> put_from(email)
@@ -122,6 +124,24 @@ defmodule Bamboo.MailjetAdapter do
     |> put_vars(email)
     |> put_custom_id(email)
     |> put_event_payload(email)
+    |> put_attachments(email)
+  end
+
+  defp attachments(%{attachments: attachments}) do
+      attachments
+      |> Enum.reverse()
+      |> Enum.map(fn attachment ->
+        %{
+          "Filename" => attachment.filename,
+          "Content-type" => attachment.content_type,
+          "content" => Base.encode64(attachment.data)
+        }
+      end)
+  end
+
+  defp put_attachments(body, email) do
+      body
+      |> Map.put(:attachments, attachments(email))
   end
 
   defp put_from(body, %Email{from: address}) when is_binary(address),
